@@ -12,6 +12,7 @@ import { CreateUserDto } from 'src/user/dto/CreateUserDto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { GetCurrentUser } from './decorators/request-with-user.decorator';
 import { User } from '@prisma/client';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -31,6 +32,7 @@ export class AuthController {
     return this.authService.login(user);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('logout')
   logout() {
     return this.authService.logout();
