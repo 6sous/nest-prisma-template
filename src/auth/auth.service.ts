@@ -1,14 +1,13 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
-import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from 'src/user/dto/CreateUserDto';
+import * as bcrypt from 'bcrypt';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
   ) {}
@@ -19,19 +18,7 @@ export class AuthService {
     return await this.userService.createUser(user);
   }
 
-  async login(username: string, password: string) {
-    const user = await this.userService.getUserByEmail(username);
-
-    if (!user) {
-      throw new ForbiddenException('Invalid credentials');
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      throw new ForbiddenException('Invalid credentials');
-    }
-
+  async login(user: User) {
     const payload = { sub: user.id };
     return {
       access_token: this.jwtService.sign(payload),
@@ -51,6 +38,24 @@ export class AuthService {
 | UTILS FUNCTIONS
 |--------------------------------------------------
 */
+
+  async validateUser(username: string, password: string) {
+    const user = await this.userService.getUserByEmail(username);
+
+    if (!user) {
+      throw new ForbiddenException('Invalid credentials');
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      throw new ForbiddenException('Invalid credentials');
+    }
+
+    const { password: _, ...result } = user;
+
+    return result;
+  }
 
   async hash(password: string) {
     const salt = await bcrypt.genSalt();

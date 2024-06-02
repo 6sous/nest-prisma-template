@@ -1,7 +1,17 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/LoginDto';
 import { CreateUserDto } from 'src/user/dto/CreateUserDto';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { GetCurrentUser } from './decorators/request-with-user.decorator';
+import { User } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -13,10 +23,12 @@ export class AuthController {
     return this.authService.register(createUserDto);
   }
 
+  @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto.username, loginDto.password);
+  login(@GetCurrentUser() user: User) {
+    console.log(user);
+    return this.authService.login(user);
   }
 
   @Post('logout')
