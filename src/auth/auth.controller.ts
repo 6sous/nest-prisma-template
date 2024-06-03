@@ -4,15 +4,16 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from 'src/user/dto/CreateUserDto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import { GetCurrentUser } from './decorators/request-with-user.decorator';
+import { GetCurrentUser } from './decorators/get-current-user.decorator';
 import { User } from '@prisma/client';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -21,20 +22,31 @@ export class AuthController {
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  register(@Body() createUserDto: CreateUserDto) {
-    return this.authService.register(createUserDto);
+  async register(@Body() createUserDto: CreateUserDto) {
+    return await this.authService.register(createUserDto);
   }
 
   @Public()
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  login(@GetCurrentUser() user: User) {
+  async login(@GetCurrentUser() user: User, @Res() res: Response) {
     console.log(user);
-    return this.authService.login(user);
+
+    const { access_token } = await this.authService.login(user);
+
+    // -----------------Uncomment this to use cookies------------------------
+
+    res
+      .cookie('access_token', access_token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        expires: new Date(Date.now() + 1 * 24 * 60 * 1000),
+      })
+      .send({ status: 'ok' });
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('logout')
   logout() {
     return this.authService.logout();
