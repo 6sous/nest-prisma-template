@@ -11,12 +11,13 @@ datasource db {
 }
 
 model User {
-  id        String   @unique @default(cuid())
-  firstname String
-  lastname  String
-  pseudo    String?  @unique
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @unique @default(cuid())
+  firstname    String
+  lastname     String
+  pseudo       String?  @unique
+  email        String   @unique
+  password     String
+  refreshToken String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

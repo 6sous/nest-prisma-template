@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/CreateUserDto';
 
@@ -10,12 +14,16 @@ export class UserService {
     return await this.prisma.user.findMany();
   }
 
-  getUserByEmail(email: string) {
-    return this.prisma.user.findUnique({ where: { email } });
+  async getUserByEmail(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
-  getUserById(id: string) {
-    const user = this.prisma.user.findUnique({ where: { id } });
+  async getUserById(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -25,6 +33,22 @@ export class UserService {
   }
 
   async createUser(createUserDto: CreateUserDto) {
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        AND: [
+          { email: createUserDto.email },
+          { OR: [{ pseudo: createUserDto.pseudo }] },
+        ],
+      },
+    });
+
+    if (existingUser) {
+      throw new ForbiddenException('User already exists', {
+        cause: new Error(),
+        description: `${existingUser.email} or ${existingUser.pseudo} already used`,
+      });
+    }
+
     return await this.prisma.user.create({
       data: createUserDto,
     });

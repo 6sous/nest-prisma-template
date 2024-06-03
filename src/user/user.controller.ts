@@ -13,8 +13,8 @@ export class UserController {
   }
 
   @Get('profile')
-  getMe(@GetCurrentUser() payload: TokenPayload) {
-    const user = this.userService.getUserById(payload.sub);
+  async getMe(@GetCurrentUser() payload: TokenPayload) {
+    const user = await this.userService.getUserById(payload.sub);
 
     return user;
   }
