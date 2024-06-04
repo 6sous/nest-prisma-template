@@ -1,6 +1,7 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { TokenPayload } from '../types/token-payload.type';
 
 export class RefreshTokenStrategy extends PassportStrategy(
   Strategy,
@@ -22,5 +23,10 @@ export class RefreshTokenStrategy extends PassportStrategy(
       return req.cookies.refresh_token;
     }
     return null;
+  }
+
+  async validate(req: Request, payload: TokenPayload) {
+    const refreshToken = req.cookies.refresh_token;
+    return { ...payload, refreshToken };
   }
 }

@@ -4,7 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateUserDto } from './dto/CreateUserDto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -33,24 +34,43 @@ export class UserService {
   }
 
   async createUser(createUserDto: CreateUserDto) {
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        AND: [
-          { email: createUserDto.email },
-          { OR: [{ pseudo: createUserDto.pseudo }] },
-        ],
-      },
-    });
-
-    if (existingUser) {
-      throw new ForbiddenException('User already exists', {
-        cause: new Error(),
-        description: `${existingUser.email} or ${existingUser.pseudo} already used`,
+    try {
+      const existingUser = await this.prisma.user.findFirst({
+        where: {
+          AND: [
+            { email: createUserDto.email },
+            { OR: [{ pseudo: createUserDto.pseudo }] },
+          ],
+        },
       });
-    }
 
-    return await this.prisma.user.create({
-      data: createUserDto,
-    });
+      if (existingUser) {
+        throw new ForbiddenException('User already exists', {
+          cause: new Error(),
+          description: `User with email ${existingUser.email} or pseudo ${existingUser.pseudo} already exists.`,
+        });
+      }
+
+      return await this.prisma.user.create({
+        data: createUserDto,
+      });
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      } else {
+        throw new Error(error.message);
+      }
+    }
+  }
+
+  async updateUser(id: string, updateUserDto: UpdateUserDto) {
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data: updateUserDto,
+      });
+    } catch (error) {
+      throw new NotFoundException('User not found');
+    }
   }
 }

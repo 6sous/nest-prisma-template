@@ -1,7 +1,15 @@
-import { Controller, Get } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Put,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { GetCurrentUser } from 'src/auth/decorators/get-current-user.decorator';
-import { TokenPayload } from 'src/auth/types/tokens.type';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { TokenPayload } from 'src/auth/types/tokenPayload.type';
 
 @Controller('users')
 export class UserController {
@@ -14,8 +22,15 @@ export class UserController {
 
   @Get('profile')
   async getMe(@GetCurrentUser() payload: TokenPayload) {
-    const user = await this.userService.getUserById(payload.sub);
+    return await this.userService.getUserById(payload.sub);
+  }
 
-    return user;
+  @Put()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async update(
+    @GetCurrentUser('sub') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.userService.updateUser(id, updateUserDto);
   }
 }

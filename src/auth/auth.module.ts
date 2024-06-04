@@ -7,16 +7,10 @@ import { UserService } from 'src/user/user.service';
 import { LocalStrategy } from './strategies/local.strategy';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 
 @Module({
-  imports: [
-    UserModule,
-    JwtModule.register({
-      global: true,
-      secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '15m' },
-    }),
-  ],
+  imports: [UserModule, JwtModule.register({})],
   controllers: [AuthController],
   providers: [
     AuthService,
@@ -24,6 +18,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PrismaService,
     LocalStrategy,
     JwtStrategy,
+    RefreshTokenStrategy,
   ],
 })
 export class AuthModule {}

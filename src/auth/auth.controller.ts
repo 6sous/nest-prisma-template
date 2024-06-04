@@ -4,16 +4,18 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateUserDto } from 'src/user/dto/CreateUserDto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { GetCurrentUser } from './decorators/get-current-user.decorator';
 import { User } from '@prisma/client';
 import { Public } from './decorators/public.decorator';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { RefreshTokenAuthGuard } from './guards/refresh-token-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -31,29 +33,39 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@GetCurrentUser() user: User, @Res() res: Response) {
-    console.log(user);
+    const tokens = await this.authService.login(user);
 
-    const { access_token } = await this.authService.login(user);
+    this.authService.storeTokensInCookies(res, tokens);
 
-    // -----------------Uncomment this to use cookies------------------------
-
-    res
-      .cookie('access_token', access_token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        expires: new Date(Date.now() + 1 * 24 * 60 * 1000),
-      })
-      .send({ status: 'ok' });
+    res.send({ status: 'ok', message: 'tokens successfully stored' });
   }
 
   @Post('logout')
-  logout() {
-    return this.authService.logout();
+  @HttpCode(HttpStatus.OK)
+  async logout(@GetCurrentUser('sub') userId: string, @Res() res: Response) {
+    await this.authService.logout(userId);
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token').send({ status: 'ok' });
   }
 
+  @Public()
+  @UseGuards(RefreshTokenAuthGuard)
   @Post('refresh')
-  refresh() {
-    return this.authService.refresh();
+  async refresh(
+    @GetCurrentUser('sub') userId: string,
+    @Res() res: Response,
+    @Req() req: Request,
+  ) {
+    const refreshToken = req.cookies.refresh_token;
+
+    try {
+      const newTokens = await this.authService.refreshAccessToken(
+        userId,
+        refreshToken,
+      );
+      return this.authService.storeTokensInCookies(res, newTokens);
+    } catch (error) {
+      throw error;
+    }
   }
 }
