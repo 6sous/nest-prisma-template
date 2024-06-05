@@ -9,7 +9,7 @@ import {
 import { UserService } from './user.service';
 import { GetCurrentUser } from 'src/auth/decorators/get-current-user.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { TokenPayload } from 'src/auth/types/tokenPayload.type';
+import { TokenPayload } from 'src/auth/types/token-payload.type';
 
 @Controller('users')
 export class UserController {

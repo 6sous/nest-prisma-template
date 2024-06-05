@@ -35,9 +35,7 @@ export class AuthController {
   async login(@GetCurrentUser() user: User, @Res() res: Response) {
     const tokens = await this.authService.login(user);
 
-    this.authService.storeTokensInCookies(res, tokens);
-
-    res.send({ status: 'ok', message: 'tokens successfully stored' });
+    return this.authService.storeTokensInCookies(res, tokens);
   }
 
   @Post('logout')
