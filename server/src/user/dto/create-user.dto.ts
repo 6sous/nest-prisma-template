@@ -7,6 +7,12 @@ import {
   Matches,
   MinLength,
 } from 'class-validator';
+import {
+  ContainsLowercase,
+  ContainsNumber,
+  ContainsSpecialCharacter,
+  ContainsUppercase,
+} from 'src/auth/decorators/password-validation.decorator';
 
 export class CreateUserDto {
   @IsDefined()
@@ -29,18 +35,10 @@ export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
   @MinLength(6, { message: 'Password must be at least 6 characters long' })
-  @Matches(/(?=.*[0-9])/, {
-    message: 'Password must contain at least one number',
-  })
-  @Matches(/(?=.*[a-z])/, {
-    message: 'Password must contain at least one lowercase letter',
-  })
-  @Matches(/(?=.*[A-Z])/, {
-    message: 'Password must contain at least one uppercase letter',
-  })
-  @Matches(/(?=.*[!@#$%^&*])/, {
-    message: 'Password must contain at least one special character (!@#$%^&*)',
-  })
+  @ContainsLowercase()
+  @ContainsUppercase()
+  @ContainsNumber()
+  @ContainsSpecialCharacter()
   password: string;
 
   refreshToken?: string = null;

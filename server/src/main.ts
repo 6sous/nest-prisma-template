@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { ValidationError } from 'class-validator';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,7 +18,24 @@ async function bootstrap() {
   };
 
   app.enableCors(corsOptions);
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      exceptionFactory: (validationErrors: ValidationError[] = []) => {
+        const formattedErrors = validationErrors.map((error) => {
+          return {
+            field: error.property,
+            errors: Object.values(error.constraints || {}),
+          };
+        });
+        return new BadRequestException({
+          statusCode: 400,
+          error: 'Bad Request',
+          message: formattedErrors,
+        });
+      },
+    }),
+  );
   app.use(cookieParser());
   await app.listen(process.env.APP_PORT || 8000);
   console.log(`Application is running on: ${await app.getUrl()}`);
